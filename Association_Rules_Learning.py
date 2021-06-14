@@ -46,7 +46,7 @@ df.isna().sum()
 df.dropna(inplace=True)
 #df.shape
 
-# Let's remove the returned product transactions (Invoice Id contains value "C")
+# Let's remove the cancelled transactions (Invoice Id contains value "C")
 
 df_Invoice = pd.DataFrame({"Invoice":[row for row in df["Invoice"].values if "C"  not in str(row)]})
 df_Invoice.head()
