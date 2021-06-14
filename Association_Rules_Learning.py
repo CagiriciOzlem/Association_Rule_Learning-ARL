@@ -21,7 +21,6 @@ Our aim is to suggest products to users during the purchasing process by applyin
 
 # Import Libraries
 
-
 import pandas as pd
 pd.set_option('display.max_columns', None)
 pd.set_option('display.width', 500)
@@ -52,10 +51,10 @@ df_Invoice = pd.DataFrame({"Invoice":[row for row in df["Invoice"].values if "C"
 df_Invoice.head()
 df_Invoice = df_Invoice.drop_duplicates("Invoice")
 
-# The transactions except returned product transactions
+# The transactions except cancelled transactions:
 df = df.merge(df_Invoice, on = "Invoice")
 
-# Removing  Outliers with Interquartile Range Method
+# Removing  Outliers with Interquartile Range Method:
 
 # Price:
 
@@ -80,7 +79,7 @@ up_limit = Q3 + 1.5 * IQR
 df.loc[(df["Quantity"] < low_limit), "Quantity"] = low_limit
 df.loc[(df["Quantity"] > up_limit ), "Quantity"] = up_limit
 
-# Delete values less than or equal to 0 in the variables Quantity and Price
+# Removing values less than or equal to 0 in the variables Quantity and Price:
 
 df = df[df["Quantity"] > 0]
 df = df[df["Price"] > 0]
@@ -106,7 +105,7 @@ df_product = product_counts[product_counts["StockCode_Count"]>1]
 
 df_product.head()
 
-# Let's delete products with more than one stock code 
+# Let's delete products with more than one stock code:
 
 df = df[~df["Description"].isin(df_product["Description"])]
 
@@ -120,19 +119,18 @@ df_product.rename(columns={'Description':'Description_Count'},inplace=True)
 df_product = df_product.sort_values("Description_Count", ascending=False)
 df_product = df_product[df_product["Description_Count"] > 1] 
 
-
 df_product.head()
 
-# Let's delete stock codes that represent multiple products
+# Let's delete stock codes that represent multiple products:
 
 df = df[~df["StockCode"].isin(df_product["StockCode"])]
 
-# Now each stock code represents a single product
+# Now each stock code represents a single product:
 
 print(df.StockCode.nunique())
 print(df.Description.nunique())
 
-# The post statement in the stock code shows the postage cost, let's delete it as it is not a product
+# The post statement in the stock code shows the postage cost, let's delete it as it is not a product:
 
 df = df[~df["StockCode"].str.contains("POST", na=False)]
 
@@ -146,14 +144,11 @@ gr_inv_pro_df = create_invoice_product_df(df_germany, id=True)
 gr_inv_pro_df.columns = gr_inv_pro_df.columns.droplevel(0)
 gr_inv_pro_df.head(5)
 
-# Let's define a function to find the product name corresponding to the stock code
+# Let's define a function to find the product name corresponding to the stock code:
 
 def check_id(dataframe, stockcode):
-    # product_name = dataframe,[dataframe,["StockCode"] == stockcode]["Description"]
-    # df_fr[df_fr["StockCode"] == 10002]["Description"].value_counts().index.to_list()
-    product_name = dataframe[dataframe["StockCode"] == stockcode][["Description"]].values[0].tolist()
-    # product_name = dataframe[dataframe["StockCode"] == stockcode]["Description"].drop_duplicates().values
-    print(product_name)
+    product_name = dataframe[dataframe["StockCode"] == stockcode]["Description"].unique()[0]
+    return stockcode, product_name
     
 check_id(df_germany, 10002)
 
@@ -165,7 +160,7 @@ frequent_itemsets = apriori(gr_inv_pro_df, min_support=0.01, use_colnames=True)
 frequent_itemsets.sort_values("support", ascending=False).head(100)
 
 # Finding frequent patterns, associations
-#  Note: An association rule has two parts: an antecedent (if) and a consequent (then). An antecedent is an item found within the data. A consequent is an item found in combination with the antecedent
+
 rules = association_rules(frequent_itemsets, metric="support", min_threshold=0.01)
 rules.sort_values("support", ascending=False).head(5)
 
@@ -205,28 +200,17 @@ product_id = 22492
 recommendation_list = []
 
 for idx, product in enumerate(sorted_rules["antecedents"]):
-    # antecendent tuple olduğu için listeye çevirelim ve liste içinde arayalım:
     for j in list(product):
         if j == product_id:
-            # bu yakaladığımız integer değerin indexi ne ise (idx) consequentte onu arayacağız, bulduğumuz satırlar için ilk ürünü [0]  önerelim 
             recommendation_list.append(list(sorted_rules.iloc[idx]["consequents"])[0])
             recommendation_list = list( dict.fromkeys(recommendation_list) )
 
-#ilk 5 ürünü getirelim:
+# Let's bring the top 5 most preferred products together with the product with id 22492
 
 list_top5 = recommendation_list[0:5]
-
 list_top5
 
 # Let's show the product names of top 5 recommended products:
-
-def check_id(dataframe, stockcode):
-    # product_name = dataframe,[dataframe,["StockCode"] == stockcode]["Description"]
-    # df_fr[df_fr["StockCode"] == 10002]["Description"].value_counts().index.to_list()
-    product_name = dataframe[dataframe["StockCode"] == stockcode]["Description"].unique()[0]
-    # product_name = dataframe[dataframe["StockCode"] == stockcode]["Description"].drop_duplicates().values
-    return stockcode, product_name
-
 
 for elem in list_top5:
   print(check_id(df_germany,elem))
