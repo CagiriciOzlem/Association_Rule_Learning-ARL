@@ -101,7 +101,7 @@ df_product = df_product.groupby(["Description"]).agg({"StockCode":"count"}).rese
 df_product.rename(columns={'StockCode':'StockCode_Count'},inplace=True)
 
 df_product = df_product.sort_values("StockCode_Count", ascending=False)
-df_product = product_counts[product_counts["StockCode_Count"]>1]
+df_product = df_product[df_product["StockCode_Count"]>1]
 
 df_product.head()
 
